@@ -10,23 +10,16 @@ const path = require("path");
 const session = require("express-session");
 const passport = require("passport");
 const flash = require("connect-flash");
+const connectDB = require("./config/db");
 
 // Налаштування змінних середовища
 dotenv.config();
 
-// Імпортуємо підключення до бази
-const connectDB = require("./config/db");
-
 // Ініціалізація Express
 const app = express();
 
-// Імпортуємо маршрути
-const { router: authRouter } = require("./routes/auth");
-const { router: settingsRouter } = require("./routes/settings");
-
-// Налаштування шаблонізатора EJS
-app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "views"));
+// Підключення до MongoDB перед стартом сервера
+connectDB();
 
 // Middleware
 app.use(cors());
@@ -37,10 +30,10 @@ app.use(helmet());
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
-// Ліміт запитів для захисту від DDoS
+// Ліміт запитів
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 хвилин
-    max: 100, // Максимум 100 запитів
+    windowMs: 15 * 60 * 1000,
+    max: 100,
     message: "Too many requests from this IP, please try again later."
 });
 app.use("/api", limiter);
@@ -50,63 +43,62 @@ app.use(session({
     secret: process.env.SESSION_SECRET || "your-secret-key",
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false } // Встановіть `true`, якщо використовуєте HTTPS
+    cookie: { secure: false, httpOnly: true, sameSite: "Strict" }
 }));
 
 // Ініціалізація Passport.js
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Додаємо flash-повідомлення
+// Flash-повідомлення
 app.use(flash());
 
-// Middleware для глобального доступу до flash-повідомлень
+// Middleware для доступу до flash-повідомлень
 app.use((req, res, next) => {
     res.locals.error = req.flash("error");
     next();
 });
 
-// Збереження теми в сесії
-app.post("/settings/set-theme", (req, res) => {
-    req.session.theme = req.body.theme || "light";
-    res.redirect("/settings");
-});
+// Налаштування шаблонізатора EJS
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
 
-// Маршрут для головної сторінки
+// Імпортуємо маршрути
+const { router: authRouter } = require("./routes/auth");
+const { router: settingsRouter } = require("./routes/settings");
+const { router: usersRouter } = require("./routes/users");
+
+app.use("/settings", settingsRouter);
+app.use("/auth", authRouter);
+app.use("/users", usersRouter);
+
+// Основні маршрути
 app.get("/", (req, res) => {
     res.render("index", {
         title: "Home",
-        theme: req.session.theme || "light",
+        theme: req.cookies.theme || "light",
         body: "<h1>Welcome to Home Page</h1>"
     });
 });
 
-// Маршрут для сторінки налаштувань
 app.get("/settings", (req, res) => {
     res.render("settings", {
         title: "Settings",
-        theme: req.session.theme || "light",
+        theme: req.cookies.theme || "light",
         body: "<h1>Settings Page</h1>"
     });
 });
 
-// Підключаємо маршрути
-app.use("/settings", settingsRouter);
-app.use("/auth", authRouter);
-
-// Обробка помилки 404
+// Обробка 404
 app.use((req, res, next) => {
     res.status(404).render("error", { message: "Page not found", status: 404 });
 });
 
-// Обробка помилки сервера
+// Обробка серверних помилок
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).render("error", { message: "Server error", status: 500 });
 });
-
-// Підключення до MongoDB
-connectDB();
 
 // Запуск сервера
 const PORT = process.env.PORT || 3001;

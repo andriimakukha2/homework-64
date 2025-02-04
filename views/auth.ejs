@@ -1,32 +1,50 @@
 <%- include('layout', { theme: theme, title: title, body: "<h1>Authorization</h1>" }) %>
 
-<% if (error) { %>
-    <p style="color: red;"><%= error %></p>
+<% if (error && error.length > 0) { %>
+    <div style="color: red;">
+        <% error.forEach(err => { %>
+            <p><%= err %></p>
+        <% }) %>
+    </div>
 <% } %>
 
-<h2>Register</h2>
-<form action="/auth/register" method="POST">
-    <label for="register-username">Enter username:</label>
-    <input type="text" name="username" id="register-username" required>
+<% if (user) { %>
+    <h2>Welcome, <%= user.name %>!</h2>
+    <p>Email: <%= user.email %></p>
+    <form action="/auth/logout" method="GET">
+        <button type="submit">Logout</button>
+    </form>
+<% } else { %>
+    <h2>Register</h2>
+    <form action="/auth/register" method="POST">
+        <label for="register-name">Full Name:</label>
+        <input type="text" name="name" id="register-name" required>
 
-    <label for="register-password">Enter password:</label>
-    <input type="password" name="password" id="register-password" required>
+        <label for="register-email">Email:</label>
+        <input type="email" name="email" id="register-email" required>
 
-    <label for="register-password-confirm">Confirm password:</label>
-    <input type="password" name="passwordConfirm" id="register-password-confirm" required>
+        <label for="register-age">Age:</label>
+        <input type="number" name="age" id="register-age" min="1" required>
 
-    <button type="submit">Register</button>
-</form>
+        <label for="register-password">Password:</label>
+        <input type="password" name="password" id="register-password" required>
 
-<hr>
+        <label for="register-password-confirm">Confirm Password:</label>
+        <input type="password" name="passwordConfirm" id="register-password-confirm" required>
 
-<h2>Login</h2>
-<form action="/auth/login" method="POST">
-    <label for="login-username">Enter username:</label>
-    <input type="text" name="username" id="login-username" required>
+        <button type="submit">Register</button>
+    </form>
 
-    <label for="login-password">Enter password:</label>
-    <input type="password" name="password" id="login-password" required>
+    <hr>
 
-    <button type="submit">Login</button>
-</form>
+    <h2>Login</h2>
+    <form action="/auth/login" method="POST">
+        <label for="login-email">Email:</label>
+        <input type="email" name="email" id="login-email" required>
+
+        <label for="login-password">Password:</label>
+        <input type="password" name="password" id="login-password" required>
+
+        <button type="submit">Login</button>
+    </form>
+<% } %>

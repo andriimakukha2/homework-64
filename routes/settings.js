@@ -4,7 +4,8 @@ const router = express.Router();
 // Сторінка налаштувань
 router.get('/', (req, res) => {
     // Отримуємо тему з кукі або використовуємо 'light' за замовчуванням
-    res.render('settings', { title: 'Settings', theme: req.cookies.theme || 'light' });
+    const theme = req.cookies.theme || 'light';
+    res.render('settings', { title: 'Settings', theme });
 });
 
 // Збереження вибраної теми

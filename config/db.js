@@ -1,3 +1,4 @@
+require("dotenv").config();
 const mongoose = require("mongoose");
 
 const connectDB = async () => {
@@ -8,7 +9,6 @@ const connectDB = async () => {
         });
         console.log("✅ MongoDB successfully connected");
 
-        // Додаємо обробку подій підключення
         mongoose.connection.on("error", (err) => {
             console.error("❌ MongoDB connection error:", err);
         });
@@ -18,7 +18,7 @@ const connectDB = async () => {
         });
     } catch (err) {
         console.error("❌ MongoDB connection failed:", err);
-        process.exit(1); // Вихід з процесу у разі помилки
+        process.exit(1);
     }
 };
 
