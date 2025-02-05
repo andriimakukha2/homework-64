@@ -1,6 +1,4 @@
-<%- include('layout', { theme: theme, title: title }) %>
-
-<h1>Settings</h1>
+<%- include('layout', { title: "Settings", theme: theme, content: "<h1>Settings</h1>" }) %>
 
 <form action="/settings/set-theme" method="POST">
     <label for="theme">Choose a theme:</label>

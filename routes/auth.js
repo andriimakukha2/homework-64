@@ -32,43 +32,52 @@ passport.deserializeUser(async (id, done) => {
     }
 });
 
-// Middleware для перевірки авторизації
-function isAuthenticated(req, res, next) {
-    if (req.isAuthenticated()) return next();
-    req.flash("error", "You need to log in first");
-    res.redirect("/auth");
-}
+// Middleware для збереження теми в сесії
+router.use((req, res, next) => {
+    if (!req.session.theme) {
+        req.session.theme = "light"; // Тема за замовчуванням
+    }
+    res.locals.theme = req.session.theme; // Передача теми в шаблони
+    next();
+});
 
 // Сторінка авторизації
 router.get("/", (req, res) => {
     res.render("auth", {
         title: "Authorization",
-        theme: req.session.theme || "light",
+        theme: req.session.theme, // Беремо тему з сесії
         error: req.flash("error"),
         user: req.user || null,
     });
 });
 
-// Реєстрація користувача та збереження в MongoDB
+// Зміна теми
+router.post("/set-theme", (req, res) => {
+    const { theme } = req.body;
+    if (theme === "light" || theme === "dark") {
+        req.session.theme = theme; // Збереження теми в сесії
+        console.log("✅ Тема змінена на:", theme);
+    } else {
+        console.log("❌ Неправильне значення теми:", theme);
+    }
+    res.redirect("/auth"); // Перенаправлення на сторінку авторизації
+});
+
+// Реєстрація користувача
 router.post("/register", async (req, res) => {
     try {
-        console.log("📩 Отримано запит на реєстрацію:", req.body);
-
         const { name, email, password, passwordConfirm, age } = req.body;
 
-        // Перевірка обов'язкових полів
         if (!name || !email || !password || !passwordConfirm || !age) {
             req.flash("error", "All fields are required");
             return res.redirect("/auth");
         }
 
-        // Перевірка віку
         if (isNaN(age) || age < 18 || age > 100) {
             req.flash("error", "Age must be a valid number between 18 and 100");
             return res.redirect("/auth");
         }
 
-        // Перевірка пароля
         if (password !== passwordConfirm) {
             req.flash("error", "Passwords do not match");
             return res.redirect("/auth");
@@ -79,15 +88,9 @@ router.post("/register", async (req, res) => {
             return res.redirect("/auth");
         }
 
-        // Хешування пароля
         const hashedPassword = await bcrypt.hash(password, 10);
-        console.log("🔑 Зашифрований пароль:", hashedPassword);
-
-        // Створення користувача
         const newUser = new User({ name, email, password: hashedPassword, age });
         await newUser.save();
-
-        console.log("✅ Користувач збережений:", newUser);
 
         req.login(newUser, (err) => {
             if (err) return next(err);
@@ -104,7 +107,6 @@ router.post("/register", async (req, res) => {
 router.post("/login", (req, res, next) => {
     passport.authenticate("local", (err, user, info) => {
         if (err) {
-            console.error("❌ Помилка аутентифікації:", err);
             req.flash("error", "Authentication error");
             return res.redirect("/auth");
         }
@@ -115,12 +117,9 @@ router.post("/login", (req, res, next) => {
 
         req.logIn(user, (err) => {
             if (err) {
-                console.error("❌ Помилка під час входу:", err);
                 req.flash("error", "Login error");
                 return res.redirect("/auth");
             }
-
-            console.log("✅ Користувач увійшов:", user);
             return res.redirect("/protected");
         });
     })(req, res, next);
@@ -129,29 +128,21 @@ router.post("/login", (req, res, next) => {
 // Вихід користувача
 router.get("/logout", (req, res) => {
     req.logout((err) => {
-        if (err) {
-            console.error("❌ Помилка при виході:", err);
-            return next(err);
-        }
+        if (err) return next(err);
         req.session.destroy(() => res.redirect("/"));
     });
 });
 
 // Захищений маршрут
 router.get("/protected", isAuthenticated, (req, res) => {
-    console.log("Authenticated User:", req.user); // Debugging line
     res.send(`<h1>Welcome, ${req.user.name}</h1><br><a href="/logout">Logout</a>`);
 });
 
-// Отримання списку користувачів (тільки для авторизованих)
-router.get("/users", isAuthenticated, async (req, res) => {
-    try {
-        const users = await User.find({}, "name email age");
-        res.render("users", { title: "Users List", users });
-    } catch (error) {
-        console.error("❌ Error fetching users:", error);
-        res.status(500).send("Internal Server Error");
-    }
-});
+// Middleware для перевірки авторизації
+function isAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) return next();
+    req.flash("error", "You need to log in first");
+    res.redirect("/auth");
+}
 
 module.exports = { router };

@@ -76,7 +76,7 @@ app.use("/users", usersRouter);
 app.get("/", (req, res) => {
     res.render("index", {
         title: "Home",
-        theme: req.cookies.theme || "light",
+        theme: req.session.theme || "light",
         body: "<h1>Welcome to Home Page</h1>"
     });
 });
