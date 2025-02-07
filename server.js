@@ -67,10 +67,12 @@ app.set("views", path.join(__dirname, "views"));
 const { router: authRouter } = require("./routes/auth");
 const { router: settingsRouter } = require("./routes/settings");
 const { router: usersRouter } = require("./routes/users");
+const { router: userDataRouter } = require("./routes/userData");
 
 app.use("/settings", settingsRouter);
 app.use("/auth", authRouter);
 app.use("/users", usersRouter);
+app.use("/userData", userDataRouter);
 
 // Основні маршрути
 app.get("/", (req, res) => {
