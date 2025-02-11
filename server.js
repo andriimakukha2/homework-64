@@ -91,6 +91,10 @@ app.get("/settings", (req, res) => {
     });
 });
 
+app.get("/protected", (req, res) => {
+    res.status(200).send("Protected route content");
+});
+
 // Обробка 404
 app.use((req, res, next) => {
     res.status(404).render("error", { message: "Page not found", status: 404 });

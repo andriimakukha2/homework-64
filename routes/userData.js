@@ -150,4 +150,38 @@ router.get("/find", async (req, res) => {
     }
 });
 
+// 📌 Використання курсорів (Cursor Pagination)
+router.get("/findWithCursor", async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+
+        const cursor = User.find().skip((page - 1) * limit).limit(limit).cursor();
+        const users = [];
+
+        for await (const user of cursor) {
+            users.push(user);
+        }
+
+        res.json(users);
+    } catch (error) {
+        console.error("❌ Error using cursor:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+// 📌 Агрегаційний запит для статистики (наприклад, середнє значення віку користувачів)
+router.get("/aggregate", async (req, res) => {
+    try {
+        const aggregationResult = await User.aggregate([
+            { $group: { _id: null, averageAge: { $avg: "$age" }, userCount: { $sum: 1 } } }
+        ]);
+
+        res.json(aggregationResult);
+    } catch (error) {
+        console.error("❌ Error performing aggregation:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
 module.exports = { router };
