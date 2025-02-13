@@ -104,23 +104,30 @@ router.post("/register", async (req, res) => {
 });
 
 // Вхід користувача
+const jwt = require("jsonwebtoken");
+
 router.post("/login", (req, res, next) => {
     passport.authenticate("local", (err, user, info) => {
         if (err) {
-            req.flash("error", "Authentication error");
-            return res.redirect("/auth");
+            return res.status(500).json({ message: "Authentication error" });
         }
         if (!user) {
-            req.flash("error", info.message || "Invalid credentials");
-            return res.redirect("/auth");
+            return res.status(401).json({ message: info.message || "Invalid credentials" });
         }
 
         req.logIn(user, (err) => {
             if (err) {
-                req.flash("error", "Login error");
-                return res.redirect("/auth");
+                return res.status(500).json({ message: "Login error" });
             }
-            return res.redirect("/protected");
+
+            // Генерируем JWT-токен
+            const token = jwt.sign(
+                { userId: user._id, email: user.email },
+                process.env.JWT_SECRET || "your_secret_key",
+                { expiresIn: "1h" }
+            );
+
+            res.json({ token, user: { _id: user._id, name: user.name, email: user.email } });
         });
     })(req, res, next);
 });

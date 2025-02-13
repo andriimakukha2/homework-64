@@ -5,7 +5,8 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
     try {
-        const users = await User.find({}, "email"); // Отримуємо тільки email користувачів
+        const users = await User.find({}).limit(1);  // Возьмем только одного пользователя для отладки
+        console.log("Single user:", users[0]);  // Выводим одного пользователя в консоль
         res.render("users", { title: "Users", users });
     } catch (error) {
         console.error("Error fetching users:", error);

@@ -28,6 +28,7 @@ router.post("/insertMany", async (req, res) => {
 });
 
 // 📌 Оновлення одного користувача (updateOne)
+// Обновление одного пользователя
 router.put("/updateOne/:id", async (req, res) => {
     try {
         const { id } = req.params;
@@ -37,7 +38,7 @@ router.put("/updateOne/:id", async (req, res) => {
             return res.status(400).json({ message: "Invalid ID format" });
         }
 
-        delete updateData._id; // Запобігаємо оновленню _id
+        delete updateData._id;
 
         const result = await User.updateOne({ _id: new ObjectId(id) }, { $set: updateData });
 
@@ -45,14 +46,18 @@ router.put("/updateOne/:id", async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        res.json(result);
+        res.json({
+            message: "User updated successfully",
+            updatedCount: result.modifiedCount,
+            updatedFields: updateData,
+        });
     } catch (error) {
         console.error("❌ Error updating user:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 });
 
-// 📌 Оновлення кількох користувачів (updateMany)
+// Обновление нескольких пользователей
 router.put("/updateMany", async (req, res) => {
     try {
         const { filter, updateData } = req.body;
@@ -63,7 +68,11 @@ router.put("/updateMany", async (req, res) => {
 
         const result = await User.updateMany(filter, { $set: updateData });
 
-        res.json(result);
+        res.json({
+            message: "Users updated successfully",
+            updatedCount: result.modifiedCount,
+            matchedCount: result.matchedCount,
+        });
     } catch (error) {
         console.error("❌ Error updating multiple users:", error);
         res.status(500).json({ message: "Internal server error" });
